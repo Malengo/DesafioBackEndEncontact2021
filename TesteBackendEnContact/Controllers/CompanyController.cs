@@ -28,7 +28,9 @@ namespace TesteBackendEnContact.Controllers
         [HttpDelete]
         public async Task Delete(int id, [FromServices] ICompanyRepository companyRepository)
         {
-            await companyRepository.DeleteAsync(id);
+         
+         await companyRepository.DeleteAsync(id);
+         
         }
 
         [HttpGet]
