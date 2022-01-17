@@ -3,6 +3,7 @@ using Dapper.Contrib.Extensions;
 using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TesteBackendEnContact.Core.Domain.ContactBook;
 using TesteBackendEnContact.Core.Interface.ContactBook;
@@ -34,12 +35,15 @@ namespace TesteBackendEnContact.Repository
 
         public async Task DeleteAsync(int id)
         {
+          
             using var connection = new SqliteConnection(databaseConfig.ConnectionString);
+            using var transaction = connection.BeginTransaction();
 
-            // TODO
-            var sql = "";
+            var sql = new StringBuilder();
+            sql.AppendLine("DELETE FROM ContactBook WHERE Id = @id;");
+            sql.AppendLine("UPDATE ContactBook SET CompanyId = null WHERE CompanyId = @id;");
 
-            await connection.ExecuteAsync(sql);
+            await connection.ExecuteAsync(sql.ToString(), new { id }, transaction);
         }
 
 
@@ -64,9 +68,11 @@ namespace TesteBackendEnContact.Repository
         }
         public async Task<IContactBook> GetAsync(int id)
         {
-            var list = await GetAllAsync();
+            using var connection = new SqliteConnection(databaseConfig.ConnectionString);
+            var query = "SELECT * FROM ContactBook where id = @id";
+            var result = await connection.QuerySingleOrDefaultAsync<ContactBookDao>(query, new { id });
 
-            return list.ToList().Where(item => item.Id == id).FirstOrDefault();
+            return result?.Export();
         }
     }
 
@@ -84,7 +90,7 @@ namespace TesteBackendEnContact.Repository
         public ContactBookDao(IContactBook contactBook)
         {
             Id = contactBook.Id;
-            Name = Name;
+            Name = contactBook.Name;
         }
 
         public IContactBook Export() => new ContactBook(Id, Name);
